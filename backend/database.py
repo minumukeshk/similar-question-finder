@@ -1,13 +1,11 @@
-import os
 from motor.motor_asyncio import AsyncIOMotorClient
+import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-MONGO_URI: str = os.getenv("MONGO_URI", "mongodb://localhost:27017/edtech")
+MONGO_URI = os.getenv("MONGO_URI")
 
-# Initialize client and database at module level
-# Add these SSL bypass parameters for Render compatibility
 client = AsyncIOMotorClient(
     MONGO_URI,
     tlsAllowInvalidCertificates=True,
@@ -15,8 +13,6 @@ client = AsyncIOMotorClient(
 )
 
 db = client["edtech"]
-
-# Export collection references — all other modules import these directly
 users_collection = db["users"]
 questions_collection = db["questions"]
 
