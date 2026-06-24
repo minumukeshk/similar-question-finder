@@ -3,10 +3,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
 # ─────────────────────────────────────────────
-# Model — loaded once at module import time
+# Model — lazy loaded to save RAM on startup
 # ─────────────────────────────────────────────
 
-_model = SentenceTransformer("all-MiniLM-L6-v2")
+_model = None
+_seed_embeddings = None
 
 # ─────────────────────────────────────────────
 # Topic seeds for auto-tagging
@@ -23,10 +24,20 @@ TOPIC_SEEDS: dict[str, str] = {
     "Economics": "market supply demand inflation GDP trade",
 }
 
-# Pre-compute seed embeddings so auto_tag() is fast on every call
 _seed_labels: list[str] = list(TOPIC_SEEDS.keys())
-_seed_embeddings: np.ndarray = _model.encode(list(TOPIC_SEEDS.values()))
 
+def get_model():
+    """
+    Lazy load the model and seed embeddings the first time they are needed.
+    This prevents the app from running out of memory during startup on Render.
+    """
+    global _model, _seed_embeddings
+    if _model is None:
+        print("[NLP] Loading MiniLM model into memory for the first time...")
+        _model = SentenceTransformer("all-MiniLM-L6-v2")
+        print("[NLP] Pre-computing topic seed embeddings...")
+        _seed_embeddings = _model.encode(list(TOPIC_SEEDS.values()))
+    return _model
 
 # ─────────────────────────────────────────────
 # Public API
@@ -37,7 +48,8 @@ def get_embedding(text: str) -> list[float]:
     Encode a text string into a 384-dimensional embedding vector
     using the all-MiniLM-L6-v2 sentence-transformer model.
     """
-    vector = _model.encode(text)
+    model = get_model()
+    vector = model.encode(text)
     return vector.tolist()
 
 
@@ -86,7 +98,10 @@ def auto_tag(text: str) -> str:
     topic seed embeddings via cosine similarity. Returns the topic
     label with the highest score.
     """
-    text_vec = _model.encode(text).reshape(1, -1)
+    model = get_model()
+    text_vec = model.encode(text).reshape(1, -1)
+    
+    # _seed_embeddings is guaranteed to be loaded since get_model() was called
     similarities = cosine_similarity(text_vec, _seed_embeddings)[0]
     best_idx = int(np.argmax(similarities))
     return _seed_labels[best_idx]
