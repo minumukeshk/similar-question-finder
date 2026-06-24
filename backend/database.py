@@ -7,7 +7,16 @@ load_dotenv()
 MONGO_URI: str = os.getenv("MONGO_URI", "mongodb://localhost:27017/edtech")
 
 # Initialize client and database at module level
-client = AsyncIOMotorClient(MONGO_URI)
+# Added TLS and timeout parameters to prevent SSL handshake/timeout errors on Render
+client = AsyncIOMotorClient(
+    MONGO_URI,
+    tls=True,
+    tlsAllowInvalidCertificates=False,
+    serverSelectionTimeoutMS=30000,
+    connectTimeoutMS=30000,
+    socketTimeoutMS=30000
+)
+
 db = client["edtech"]
 
 # Export collection references — all other modules import these directly
