@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: similarq-backend
+    runtime: python
+    region: oregon
+    plan: free
+
+    # Build step — installs all Python dependencies
+    buildCommand: pip install --no-cache-dir -r requirements.txt
+
+    # Start command — binds to 0.0.0.0 so Render can route traffic in
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+
+    # Render injects PORT automatically; tell Uvicorn to use it
+    envVars:
+      - key: MONGO_URI
+        sync: false          # Set the real value in the Render dashboard
+      - key: JWT_SECRET
+        sync: false          # Set the real value in the Render dashboard
+      - key: FRONTEND_URL
+        sync: false          # e.g. https://your-app.vercel.app
+      - key: PYTHON_VERSION
+        value: "3.11.9"
