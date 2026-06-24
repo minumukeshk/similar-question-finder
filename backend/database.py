@@ -7,14 +7,11 @@ load_dotenv()
 MONGO_URI: str = os.getenv("MONGO_URI", "mongodb://localhost:27017/edtech")
 
 # Initialize client and database at module level
-# Added TLS and timeout parameters to prevent SSL handshake/timeout errors on Render
+# Add these SSL bypass parameters for Render compatibility
 client = AsyncIOMotorClient(
     MONGO_URI,
-    tls=True,
-    tlsAllowInvalidCertificates=False,
-    serverSelectionTimeoutMS=30000,
-    connectTimeoutMS=30000,
-    socketTimeoutMS=30000
+    tlsAllowInvalidCertificates=True,
+    serverSelectionTimeoutMS=30000
 )
 
 db = client["edtech"]
